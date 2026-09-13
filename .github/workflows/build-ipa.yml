@@ -1,0 +1,54 @@
+name: Build unsigned iPhone IPA
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Build unsigned app
+        run: |
+          set -euo pipefail
+          xcodebuild \
+            -project AirTranslate13Mini.xcodeproj \
+            -scheme AirTranslate13Mini \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath "$PWD/build/DerivedData" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY='' \
+            clean build
+
+      - name: Package IPA
+        run: |
+          set -euo pipefail
+          APP="$PWD/build/DerivedData/Build/Products/Release-iphoneos/AirTranslate.app"
+          test -d "$APP"
+          mkdir -p "$PWD/build/Payload"
+          cp -R "$APP" "$PWD/build/Payload/"
+          cd "$PWD/build"
+          /usr/bin/zip -qry AirTranslate13Mini-unsigned.ipa Payload
+          shasum -a 256 AirTranslate13Mini-unsigned.ipa > AirTranslate13Mini-unsigned.ipa.sha256
+
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: AirTranslate13Mini-unsigned-ipa
+          path: |
+            build/AirTranslate13Mini-unsigned.ipa
+            build/AirTranslate13Mini-unsigned.ipa.sha256
+          if-no-files-found: error

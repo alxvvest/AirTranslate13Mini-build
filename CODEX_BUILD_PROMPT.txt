@@ -1,0 +1,45 @@
+You are finishing and validating the native iOS project AirTranslate13Mini.
+
+GOAL
+Make a reliable iPhone 13 mini + AirPods Spanish -> English live subtitle app.
+
+CURRENT ARCHITECTURE
+- SwiftUI UI.
+- AVAudioSession playAndRecord + allowBluetoothHFP.
+- Prefer Bluetooth HFP input when available.
+- SFSpeechRecognizer(locale: es-MX), partial results enabled.
+- requiresOnDeviceRecognition only when supported.
+- Apple Translation framework es-MX -> en-US.
+- English TTS optional; recognition pauses during TTS.
+- Deployment target iOS 18.0.
+- No paid APIs and no API keys.
+
+VALIDATION / REPAIR TASKS
+1. Open/generate the Xcode project and compile with the current stable Xcode/iOS SDK.
+2. Fix ONLY real compiler/API issues; keep the architecture simple.
+3. Verify Info.plist privacy strings are present.
+4. Verify the app can request microphone + Speech permissions.
+5. Verify no duplicate audio-engine taps occur across automatic recognition restarts.
+6. Verify Stop prevents any automatic restart.
+7. Verify AirPods/HFP input is preferred when present and the actual route name is displayed.
+8. Verify Spanish partial/final transcription updates the UI.
+9. Verify TranslationSession repeatedly translates new transcript chunks without stale-session crashes.
+10. Verify Speak English pauses recognition before AVSpeechSynthesizer output and resumes after completion.
+11. Run on a physical iPhone, not only Simulator, because Bluetooth microphone routing must be proven on hardware.
+12. Record evidence: Xcode build result, iOS version, iPhone model, AirPods model, actual input route, one Spanish test phrase, recognized Spanish, resulting English, and whether speech recognition was on-device.
+
+DO NOT
+- Add OpenAI/Google/cloud paid APIs.
+- Add accounts, analytics, ads, or telemetry.
+- Rewrite this into a server architecture.
+- Claim AirPods microphone routing passed without physical-device evidence.
+
+FINAL OUTPUT
+BUILD=PASS|FAIL
+PHYSICAL_IPHONE_TEST=PASS|FAIL|NOT_RUN
+AIRPODS_INPUT_ROUTE=PASS|FAIL|NOT_RUN
+SPANISH_STT=PASS|FAIL|NOT_RUN
+SPANISH_TO_ENGLISH=PASS|FAIL|NOT_RUN
+OPTIONAL_TTS=PASS|FAIL|NOT_RUN
+PAID_APIS=0
+Then list any remaining blocker with the exact file/line and proposed fix.

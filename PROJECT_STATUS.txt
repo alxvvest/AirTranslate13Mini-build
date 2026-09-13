@@ -1,0 +1,12 @@
+AIRTRANSLATE13MINI_V0_1
+TARGET=iPhone 13 mini
+MIN_IOS=18.0
+INPUT=AirPods Bluetooth HFP preferred; iPhone mic fallback
+STT=Apple Speech / Spanish es-MX
+TRANSLATION=Apple Translation / English en-US
+TTS=Optional Apple AVSpeechSynthesizer
+API_KEYS_REQUIRED=NO
+PAID_APIS=0
+LINUX_SOURCE_ASSEMBLY=PASS
+XCODE_COMPILE=NOT_RUN (Apple iOS SDK unavailable on Linux)
+PHYSICAL_IPHONE_AIRPODS_TEST=NOT_RUN

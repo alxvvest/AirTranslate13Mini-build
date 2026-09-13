@@ -1,0 +1,36 @@
+name: AirTranslate13Mini
+options:
+  bundleIdPrefix: net.vyres
+settings:
+  base:
+    SWIFT_VERSION: 5.10
+targets:
+  AirTranslate13Mini:
+    type: application
+    platform: iOS
+    deploymentTarget: "18.0"
+    sources:
+      - path: AirTranslate
+    info:
+      path: AirTranslate/Info.plist
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: net.vyres.AirTranslate13Mini
+        PRODUCT_NAME: AirTranslate
+        TARGETED_DEVICE_FAMILY: "1"
+        CODE_SIGN_STYLE: Automatic
+        GENERATE_INFOPLIST_FILE: NO
+    scheme:
+      testTargets:
+        - AirTranslate13MiniTests
+  AirTranslate13MiniTests:
+    type: bundle.unit-test
+    platform: iOS
+    deploymentTarget: "18.0"
+    sources:
+      - path: AirTranslateTests
+    dependencies:
+      - target: AirTranslate13Mini
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: net.vyres.AirTranslate13MiniTests
