@@ -23,8 +23,12 @@ struct ContentView: View {
             .onChange(of: model.translationSource) { _, newValue in
                 guard !newValue.isEmpty else { return }
                 pendingSpanish = newValue
+
                 if translationConfiguration == nil {
-                    translationConfiguration = .init(source: sourceLanguage, target: targetLanguage)
+                    translationConfiguration = .init(
+                        source: sourceLanguage,
+                        target: targetLanguage
+                    )
                 } else {
                     translationConfiguration?.invalidate()
                 }
@@ -33,9 +37,14 @@ struct ContentView: View {
                 do {
                     let source = pendingSpanish
                     guard !source.isEmpty else { return }
+
                     let response = try await session.translate(source)
+
                     await MainActor.run {
-                        model.receiveTranslation(source: source, english: response.targetText)
+                        model.receiveTranslation(
+                            source: source,
+                            english: response.targetText
+                        )
                     }
                 } catch {
                     await MainActor.run {
@@ -52,8 +61,10 @@ struct ContentView: View {
                 Circle()
                     .frame(width: 10, height: 10)
                     .foregroundStyle(model.speech.isListening ? Color.green : Color.secondary)
+
                 Text(model.speech.status)
                     .font(.headline)
+
                 Spacer()
             }
 
@@ -61,9 +72,13 @@ struct ContentView: View {
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
 
-            Text(model.speech.usesOnDeviceRecognition ? "Spanish speech: on-device" : "Spanish speech: network may be used")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            Text(
+                model.speech.usesOnDeviceRecognition
+                    ? "Spanish speech: on-device"
+                    : "Spanish speech: network may be used"
+            )
+            .font(.caption)
+            .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
@@ -112,8 +127,11 @@ struct ContentView: View {
                         Task { await model.start() }
                     }
                 } label: {
-                    Label(model.speech.isListening ? "Stop" : "Start Listening", systemImage: model.speech.isListening ? "stop.fill" : "airpods")
-                        .frame(maxWidth: .infinity)
+                    Label(
+                        model.speech.isListening ? "Stop" : "Start Listening",
+                        systemImage: model.speech.isListening ? "stop.fill" : "airpods"
+                    )
+                    .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
@@ -124,6 +142,23 @@ struct ContentView: View {
                 .buttonStyle(.bordered)
                 .controlSize(.large)
             }
+
+            Toggle(
+                "Use AirPods microphone",
+                isOn: Binding(
+                    get: { model.speech.preferAirPodsMicrophone },
+                    set: { model.speech.setPreferAirPodsMicrophone($0) }
+                )
+            )
+            .font(.subheadline)
+
+            Text(
+                model.speech.preferAirPodsMicrophone
+                    ? "AirPods mic is best for your own voice close to your mouth."
+                    : "Recommended: point the iPhone toward the Spanish speaker. Translation audio can still play in AirPods."
+            )
+            .font(.caption)
+            .foregroundStyle(.secondary)
 
             Toggle("Speak English into AirPods", isOn: $model.speakEnglish)
                 .font(.subheadline)
@@ -136,6 +171,7 @@ struct ContentView: View {
                 Text(line.spanish)
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
+
                 Text(line.english)
                     .font(.body.weight(.semibold))
             }

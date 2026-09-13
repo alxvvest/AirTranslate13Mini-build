@@ -10,6 +10,7 @@ final class SpeechRecognizer: ObservableObject {
     @Published private(set) var routeName = "Not listening"
     @Published private(set) var status = "Ready"
     @Published private(set) var usesOnDeviceRecognition = false
+    @Published private(set) var preferAirPodsMicrophone = false
 
     var onTranscript: ((String, Bool) -> Void)?
 
@@ -53,6 +54,16 @@ final class SpeechRecognizer: ObservableObject {
         routeName = "Not listening"
     }
 
+    func setPreferAirPodsMicrophone(_ enabled: Bool) {
+        guard preferAirPodsMicrophone != enabled else { return }
+        preferAirPodsMicrophone = enabled
+
+        if wantsListening {
+            status = "Switching microphone…"
+            scheduleRestart(after: 0.08)
+        }
+    }
+
     func pauseForPlayback() {
         guard wantsListening else { return }
         tearDownRecognition(deactivateAudio: false)
@@ -64,7 +75,7 @@ final class SpeechRecognizer: ObservableObject {
         guard wantsListening else { return }
         restartTask?.cancel()
         restartTask = Task { [weak self] in
-            try? await Task.sleep(nanoseconds: 250_000_000)
+            try? await Task.sleep(nanoseconds: 120_000_000)
             guard !Task.isCancelled else { return }
             await self?.startRecognitionCycle()
         }
@@ -76,42 +87,69 @@ final class SpeechRecognizer: ObservableObject {
 
         guard let recognizer, recognizer.isAvailable else {
             status = "Spanish speech recognition unavailable"
-            scheduleRestart(after: 1.0)
+            scheduleRestart(after: 0.6)
             return
         }
 
         do {
             let session = AVAudioSession.sharedInstance()
-            try session.setCategory(
-                .playAndRecord,
-                mode: .default,
-                options: [.allowBluetooth, .allowBluetoothA2DP]
-            )
+
+            if preferAirPodsMicrophone {
+                // Bluetooth HFP is necessary when the AirPods mic is the input.
+                // voiceChat gives that narrow-band mic the processing it is designed for.
+                try session.setCategory(
+                    .playAndRecord,
+                    mode: .voiceChat,
+                    options: [.allowBluetooth, .allowBluetoothA2DP]
+                )
+            } else {
+                // Best mode for translating another person:
+                // use the iPhone mic for capture while AirPods can remain an output.
+                try session.setCategory(
+                    .playAndRecord,
+                    mode: .measurement,
+                    options: [.allowBluetoothA2DP]
+                )
+            }
+
+            try? session.setPreferredIOBufferDuration(0.005)
             try session.setActive(true, options: .notifyOthersOnDeactivation)
 
-            if let airPodsInput = session.availableInputs?.first(where: { $0.portType == .bluetoothHFP }) {
-                try? session.setPreferredInput(airPodsInput)
+            if preferAirPodsMicrophone {
+                if let airPodsInput = session.availableInputs?.first(where: { $0.portType == .bluetoothHFP }) {
+                    try? session.setPreferredInput(airPodsInput)
+                }
+            } else {
+                if let phoneInput = session.availableInputs?.first(where: { $0.portType == .builtInMic }) {
+                    try? session.setPreferredInput(phoneInput)
+                }
             }
 
             routeName = session.currentRoute.inputs.first?.portName ?? "iPhone microphone"
 
             let request = SFSpeechAudioBufferRecognitionRequest()
             request.shouldReportPartialResults = true
+            request.addsPunctuation = true
+            request.taskHint = .dictation
+
             usesOnDeviceRecognition = recognizer.supportsOnDeviceRecognition
             request.requiresOnDeviceRecognition = usesOnDeviceRecognition
             recognitionRequest = request
 
             let inputNode = audioEngine.inputNode
             let format = inputNode.outputFormat(forBus: 0)
-            inputNode.installTap(onBus: 0, bufferSize: 1024, format: format) { [weak request] buffer, _ in
+            inputNode.installTap(onBus: 0, bufferSize: 512, format: format) { [weak request] buffer, _ in
                 request?.append(buffer)
             }
             tapInstalled = true
 
             audioEngine.prepare()
             try audioEngine.start()
+
             isListening = true
-            status = "Listening for Spanish"
+            status = preferAirPodsMicrophone
+                ? "Listening with AirPods mic"
+                : "Listening with iPhone mic"
 
             recognitionTask = recognizer.recognitionTask(with: request) { [weak self] result, error in
                 Task { @MainActor in
@@ -123,18 +161,18 @@ final class SpeechRecognizer: ObservableObject {
                         self.onTranscript?(text, result.isFinal)
 
                         if result.isFinal {
-                            self.scheduleRestart(after: 0.20)
+                            self.scheduleRestart(after: 0.08)
                         }
                     }
 
                     if error != nil, self.wantsListening {
-                        self.scheduleRestart(after: 0.45)
+                        self.scheduleRestart(after: 0.20)
                     }
                 }
             }
         } catch {
             status = "Audio start failed: \(error.localizedDescription)"
-            scheduleRestart(after: 1.0)
+            scheduleRestart(after: 0.5)
         }
     }
 
@@ -165,7 +203,10 @@ final class SpeechRecognizer: ObservableObject {
         }
 
         if deactivateAudio {
-            try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+            try? AVAudioSession.sharedInstance().setActive(
+                false,
+                options: .notifyOthersOnDeactivation
+            )
         }
     }
 }
