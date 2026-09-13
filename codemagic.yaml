@@ -1,0 +1,72 @@
+workflows:
+  airtranslate-unsigned-ipa:
+    name: AirTranslate unsigned IPA
+    instance_type: mac_mini_m2
+    max_build_duration: 30
+
+    environment:
+      xcode: latest
+
+    scripts:
+      - name: Toolchain info
+        script: |
+          set -euo pipefail
+          sw_vers
+          xcodebuild -version
+          xcrun --sdk iphoneos --show-sdk-version
+
+      - name: Install XcodeGen
+        script: |
+          set -euo pipefail
+          brew install xcodegen
+
+      - name: Generate Xcode project
+        script: |
+          set -euo pipefail
+          xcodegen generate
+          test -d AirTranslate13Mini.xcodeproj
+
+      - name: Build unsigned app
+        script: |
+          set -euo pipefail
+          mkdir -p "$CM_BUILD_DIR/build"
+
+          xcodebuild \
+            -project AirTranslate13Mini.xcodeproj \
+            -scheme AirTranslate13Mini \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath "$CM_BUILD_DIR/build/DerivedData" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY='' \
+            clean build 2>&1 | tee "$CM_BUILD_DIR/build/xcodebuild.log"
+
+      - name: Package unsigned IPA
+        script: |
+          set -euo pipefail
+
+          APP="$CM_BUILD_DIR/build/DerivedData/Build/Products/Release-iphoneos/AirTranslate.app"
+
+          test -d "$APP"
+          test -f "$APP/Info.plist"
+          test -f "$APP/AirTranslate"
+
+          rm -rf "$CM_BUILD_DIR/build/Payload"
+          mkdir -p "$CM_BUILD_DIR/build/Payload"
+
+          cp -R "$APP" "$CM_BUILD_DIR/build/Payload/"
+
+          cd "$CM_BUILD_DIR/build"
+
+          /usr/bin/zip -qry AirTranslate13Mini-unsigned.ipa Payload
+          shasum -a 256 AirTranslate13Mini-unsigned.ipa \
+            > AirTranslate13Mini-unsigned.ipa.sha256
+
+          ls -lh AirTranslate13Mini-unsigned.ipa
+
+    artifacts:
+      - build/AirTranslate13Mini-unsigned.ipa
+      - build/AirTranslate13Mini-unsigned.ipa.sha256
+      - build/xcodebuild.log
