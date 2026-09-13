@@ -85,7 +85,7 @@ final class SpeechRecognizer: ObservableObject {
             try session.setCategory(
                 .playAndRecord,
                 mode: .default,
-                options: [.allowBluetoothHFP, .allowBluetoothA2DP]
+                options: [.allowBluetooth, .allowBluetoothA2DP]
             )
             try session.setActive(true, options: .notifyOthersOnDeactivation)
 

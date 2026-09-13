@@ -8,19 +8,32 @@ on:
 jobs:
   build:
     runs-on: macos-latest
+    timeout-minutes: 20
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Toolchain info
+        run: |
+          set -euo pipefail
+          sw_vers
+          xcodebuild -version
+          xcrun --sdk iphoneos --show-sdk-version
 
       - name: Install XcodeGen
         run: brew install xcodegen
 
       - name: Generate Xcode project
-        run: xcodegen generate
+        run: |
+          set -euo pipefail
+          xcodegen generate
+          test -d AirTranslate13Mini.xcodeproj
 
       - name: Build unsigned app
         run: |
           set -euo pipefail
+          mkdir -p "$PWD/build"
           xcodebuild \
             -project AirTranslate13Mini.xcodeproj \
             -scheme AirTranslate13Mini \
@@ -31,18 +44,22 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY='' \
-            clean build
+            clean build 2>&1 | tee "$PWD/build/xcodebuild.log"
 
       - name: Package IPA
         run: |
           set -euo pipefail
           APP="$PWD/build/DerivedData/Build/Products/Release-iphoneos/AirTranslate.app"
           test -d "$APP"
+          test -f "$APP/Info.plist"
+          test -f "$APP/AirTranslate"
+          rm -rf "$PWD/build/Payload"
           mkdir -p "$PWD/build/Payload"
           cp -R "$APP" "$PWD/build/Payload/"
           cd "$PWD/build"
           /usr/bin/zip -qry AirTranslate13Mini-unsigned.ipa Payload
           shasum -a 256 AirTranslate13Mini-unsigned.ipa > AirTranslate13Mini-unsigned.ipa.sha256
+          ls -lh AirTranslate13Mini-unsigned.ipa
 
       - name: Upload IPA
         uses: actions/upload-artifact@v4
@@ -52,3 +69,11 @@ jobs:
             build/AirTranslate13Mini-unsigned.ipa
             build/AirTranslate13Mini-unsigned.ipa.sha256
           if-no-files-found: error
+
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: AirTranslate13Mini-build-log
+          path: build/xcodebuild.log
+          if-no-files-found: ignore

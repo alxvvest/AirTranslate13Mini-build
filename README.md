@@ -17,9 +17,9 @@ Native iPhone MVP for **Spanish speech -> English subtitles**, designed for an i
 
 - iPhone 13 mini running **iOS 18 or newer**.
 - AirPods (recommended) or the iPhone microphone.
-- **Linux-only path supported for this project:** SideStore/iloader handles free-account sideloading, while the included GitHub Actions workflow compiles the unsigned IPA on a hosted macOS/Xcode runner.
+- **Linux-only path supported for this project:** GitHub Actions compiles the unsigned IPA on a hosted macOS/Xcode runner; iloader on Linux signs/installs the IPA over USB with a free Apple account. SideStore and LocalDevVPN are not required for direct USB installation.
 - A paid Apple Developer membership is **not required** for personal sideloading. Free-account signatures expire after 7 days and must be refreshed.
-- See `LINUX_TO_IPHONE.md`.
+- See `LINUX_TO_IPHONE.md`. For the shortest path, run `./scripts/PUSH_BUILD_DOWNLOAD.sh`, then import the resulting IPA with iloader.
 
 ## Build
 
