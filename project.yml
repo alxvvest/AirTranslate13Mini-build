@@ -13,6 +13,16 @@ targets:
       - path: AirTranslate
     info:
       path: AirTranslate/Info.plist
+      properties:
+        CFBundleDisplayName: AirTranslate
+        CFBundleShortVersionString: "0.3.0"
+        CFBundleVersion: "3"
+        LSRequiresIPhoneOS: true
+        NSMicrophoneUsageDescription: "AirTranslate uses the microphone to hear Spanish speech and translate it into English."
+        NSSpeechRecognitionUsageDescription: "AirTranslate uses speech recognition to transcribe Spanish speech for live English translation."
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: net.vyres.AirTranslate13Mini
