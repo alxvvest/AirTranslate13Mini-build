@@ -1,6 +1,6 @@
 workflows:
   airtranslate-unsigned-ipa:
-    name: AirTranslate unsigned IPA
+    name: iVYRE + VYR Mobile unsigned IPA
     instance_type: mac_mini_m2
     max_build_duration: 30
 
@@ -26,11 +26,10 @@ workflows:
           xcodegen generate
           test -d AirTranslate13Mini.xcodeproj
 
-      - name: Build unsigned app
+      - name: Build unsigned app with VYR Mobile
         script: |
           set -euo pipefail
           mkdir -p "$CM_BUILD_DIR/build"
-
           xcodebuild \
             -project AirTranslate13Mini.xcodeproj \
             -scheme AirTranslate13Mini \
@@ -43,27 +42,32 @@ workflows:
             CODE_SIGN_IDENTITY='' \
             clean build 2>&1 | tee "$CM_BUILD_DIR/build/xcodebuild.log"
 
-      - name: Package unsigned IPA
+      - name: Verify VYR Mobile embedded
         script: |
           set -euo pipefail
-
           APP="$CM_BUILD_DIR/build/DerivedData/Build/Products/Release-iphoneos/AirTranslate.app"
-
+          EXT="$APP/PlugIns/VYRMobile.appex"
           test -d "$APP"
           test -f "$APP/Info.plist"
           test -f "$APP/AirTranslate"
+          test -d "$EXT"
+          test -f "$EXT/Info.plist"
+          test -f "$EXT/manifest.json"
+          test -f "$EXT/popup.js"
+          /usr/libexec/PlistBuddy -c 'Print :NSExtension:NSExtensionPointIdentifier' "$EXT/Info.plist" | grep -Fx 'com.apple.Safari.web-extension'
+          node --check "$EXT/popup.js"
+          echo "VYR_MOBILE_EMBED_PASS"
 
+      - name: Package unsigned IPA
+        script: |
+          set -euo pipefail
+          APP="$CM_BUILD_DIR/build/DerivedData/Build/Products/Release-iphoneos/AirTranslate.app"
           rm -rf "$CM_BUILD_DIR/build/Payload"
           mkdir -p "$CM_BUILD_DIR/build/Payload"
-
           cp -R "$APP" "$CM_BUILD_DIR/build/Payload/"
-
           cd "$CM_BUILD_DIR/build"
-
           /usr/bin/zip -qry AirTranslate13Mini-unsigned.ipa Payload
-          shasum -a 256 AirTranslate13Mini-unsigned.ipa \
-            > AirTranslate13Mini-unsigned.ipa.sha256
-
+          shasum -a 256 AirTranslate13Mini-unsigned.ipa > AirTranslate13Mini-unsigned.ipa.sha256
           ls -lh AirTranslate13Mini-unsigned.ipa
 
     artifacts:
