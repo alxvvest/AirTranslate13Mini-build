@@ -1,0 +1,11 @@
+{
+  "manifest_version": 3,
+  "name": "VYR Mobile",
+  "version": "0.1.0",
+  "description": "User-activated VYR assistant for Safari.",
+  "permissions": ["activeTab", "scripting", "storage"],
+  "action": {
+    "default_title": "VYR Mobile",
+    "default_popup": "popup.html"
+  }
+}

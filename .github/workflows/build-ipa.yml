@@ -30,7 +30,7 @@ jobs:
           xcodegen generate
           test -d AirTranslate13Mini.xcodeproj
 
-      - name: Build unsigned app
+      - name: Build unsigned app with VYR Mobile
         run: |
           set -euo pipefail
           mkdir -p "$PWD/build"
@@ -46,13 +46,25 @@ jobs:
             CODE_SIGN_IDENTITY='' \
             clean build 2>&1 | tee "$PWD/build/xcodebuild.log"
 
+      - name: Verify VYR Mobile embedded
+        run: |
+          set -euo pipefail
+          APP="$PWD/build/DerivedData/Build/Products/Release-iphoneos/AirTranslate.app"
+          EXT="$APP/PlugIns/VYRMobile.appex"
+          test -d "$APP"
+          test -f "$APP/Info.plist"
+          test -f "$APP/AirTranslate"
+          test -d "$EXT"
+          test -f "$EXT/Info.plist"
+          test -f "$EXT/manifest.json"
+          /usr/libexec/PlistBuddy -c 'Print :NSExtension:NSExtensionPointIdentifier' "$EXT/Info.plist" | grep -Fx 'com.apple.Safari.web-extension'
+          node --check "$EXT/popup.js"
+          echo "VYR_MOBILE_EMBED_PASS"
+
       - name: Package IPA
         run: |
           set -euo pipefail
           APP="$PWD/build/DerivedData/Build/Products/Release-iphoneos/AirTranslate.app"
-          test -d "$APP"
-          test -f "$APP/Info.plist"
-          test -f "$APP/AirTranslate"
           rm -rf "$PWD/build/Payload"
           mkdir -p "$PWD/build/Payload"
           cp -R "$APP" "$PWD/build/Payload/"
@@ -64,7 +76,7 @@ jobs:
       - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
-          name: AirTranslate13Mini-unsigned-ipa
+          name: iVYRE-VYR-Mobile-unsigned-ipa
           path: |
             build/AirTranslate13Mini-unsigned.ipa
             build/AirTranslate13Mini-unsigned.ipa.sha256
@@ -74,6 +86,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: AirTranslate13Mini-build-log
+          name: iVYRE-VYR-Mobile-build-log
           path: build/xcodebuild.log
           if-no-files-found: ignore

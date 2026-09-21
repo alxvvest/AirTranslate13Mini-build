@@ -11,15 +11,17 @@ targets:
     deploymentTarget: "18.0"
     sources:
       - path: AirTranslate
+    dependencies:
+      - target: VYRMobile
     info:
       path: AirTranslate/Info.plist
       properties:
-        CFBundleDisplayName: AirTranslate
-        CFBundleShortVersionString: "0.3.0"
-        CFBundleVersion: "3"
+        CFBundleDisplayName: iVYRE
+        CFBundleShortVersionString: "0.4.0"
+        CFBundleVersion: "4"
         LSRequiresIPhoneOS: true
-        NSMicrophoneUsageDescription: "AirTranslate uses the microphone to hear Spanish speech and translate it into English."
-        NSSpeechRecognitionUsageDescription: "AirTranslate uses speech recognition to transcribe Spanish speech for live English translation."
+        NSMicrophoneUsageDescription: "iVYRE uses the microphone to hear Spanish speech and translate it into English."
+        NSSpeechRecognitionUsageDescription: "iVYRE uses speech recognition to transcribe Spanish speech for live English translation."
         UILaunchScreen: {}
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
@@ -33,6 +35,26 @@ targets:
     scheme:
       testTargets:
         - AirTranslate13MiniTests
+
+  VYRMobile:
+    type: app-extension
+    platform: iOS
+    deploymentTarget: "18.0"
+    sources:
+      - path: VYRMobile/SafariWebExtensionHandler.swift
+      - path: VYRMobile/Resources
+        buildPhase: resources
+    info:
+      path: VYRMobile/Info.plist
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: net.vyres.AirTranslate13Mini.VYRMobile
+        PRODUCT_NAME: VYRMobile
+        SKIP_INSTALL: YES
+        APPLICATION_EXTENSION_API_ONLY: YES
+        CODE_SIGN_STYLE: Automatic
+        GENERATE_INFOPLIST_FILE: NO
+
   AirTranslate13MiniTests:
     type: bundle.unit-test
     platform: iOS
